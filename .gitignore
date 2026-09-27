@@ -1,0 +1,9 @@
+# Extracted DSH bundles live here: `dump.cjs` pulls DSH's own client code out of
+# app.asar for reference (sidebar, layout, chat, cordis itself). It is
+# DeepSeek's code, not ours, so it must never be published.
+_ref/
+
+node_modules/
+*.bak
+*.mojibake*
+*.log

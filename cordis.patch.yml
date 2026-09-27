@@ -1,0 +1,11 @@
+# The beautify layer's only row.
+#
+# `id` is the stable handle `plugin_manager` reports and the id any later patch
+# targets: a profile's own `cordis.patch.yml` overrides this row by `id`, and
+# `plugin_manager` toggles it by writing a `disabled` override under the same id.
+#
+# Keep this file free of anything personal. It ships in a public repository and
+# every bundle patch file is loaded as-is on the user's machine.
+- insert:
+    - id: dsh-beautify
+      name: '@local/dsh-beautify'
