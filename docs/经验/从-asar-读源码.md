@@ -189,6 +189,47 @@ const PROFILE_DIR = 'D:/DSH/home/profiles/desktop';
 - 把一行 `insert` 从 bundle patch 挪到 profile patch，确认它在新层里出现了；
 - 确认 bundle patch 里只剩美化那一行、没有重复行。
 
+### ⚠️ `installAnchor` 必须是 **package.json 文件**，不是目录
+
+这个参数踩过一次坑，而且错误是**静默**的 —— 结果看着很正常，其实查的是别的安装。
+
+```js
+loadProfileDirectory(binName, profileDir, installAnchor, options?)
+//                                          ^^^^^^^^^^^^^
+// 文档原文：absolute path of a file inside the dsh app package (its package.json)
+```
+
+它的实现是：
+
+```js
+function packageDirFromAnchor(anchor, packageName) {
+  for (const searchPath of createRequire(anchor).resolve.paths(packageName) ?? []) {
+    const candidate = join(searchPath, packageName);
+    if (existsSync(join(candidate, 'package.json'))) return candidate;
+  }
+}
+function resolveBundleDir(binName, packageName, installAnchor, profileDir) {
+  for (const anchor of [installAnchor, join(profileDir, 'package.json')]) { ... }
+}
+```
+
+传目录进去，`createRequire(目录).resolve.paths()` 会从**错误的位置**往上找，
+于是找不到「安装里的」那份包，**静默回退到 profile 的 `node_modules`**。
+而 profile 里那些常常是**旧的 junction/副本**，于是：
+
+- 报出根本不存在的「版本不兼容 → 整个 bundle 被跳过」；
+- 让你以为 profile 里的旧依赖是必需的，其实运行中的 dsh 压根不看它们。
+
+**正确写法**：`anchor = '<install>/dsh/package.json'`。
+
+> 顺带记住 DSH 的契约（`resolveBundleDir` 的注释明写）：
+> **installation first，profile second** —— `@deepseek-ai/dsh-base` 这类自带 bundle
+> **永远来自运行中的那次安装，绝不来自 profile 里的本地副本**。
+> 所以 profile `node_modules` 里指向别处的 `@deepseek-ai/*` 通常是无用残留。
+
+**怎么一眼看出自己踩了**：把 profile 的 `node_modules\@deepseek-ai` 临时改名，
+再跑一次 —— 结果**一模一样**就说明本来就没用到它；结果变了就说明锚点传错了。
+
 ---
 
 ## 四、顺手记下的 patch 语义
