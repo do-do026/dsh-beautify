@@ -309,3 +309,57 @@ node tool.cjs $asar '要找的字符串' '' 6 200
 导出的文件**只**用 `fs.writeFileSync` / `dump.cjs` 写；读只用自己的 `read` 工具。
 一旦碰了 `Get-Content` / `Set-Content` / `>`，中文就没了 ——
 详见 [powershell-utf8陷阱.md](powershell-utf8陷阱.md)。
+
+---
+
+## 七、DSH 更新后类名全变了怎么办（客户端插件必读）
+
+DSH 的客户端样式是 **CSS Modules**。每个模块除了 CSS 本身，还会吐出一个映射对象：
+
+```js
+var MessageItem_module_css_default = { "bubble": "cJsG2q_bubble", "userRow": "cJsG2q_userRow" };
+```
+
+- `cJsG2q` 是**每次构建重新生成的哈希** → 会变；
+- `bubble` / `userRow` 这些**逻辑名** → 不会变；
+- **模块名**（`MessageItem_module`）→ 也不会变。
+
+所以任何靠硬编码 `.cJsG2q_bubble` 这类选择器挂钩子的插件，
+**每次 DSH 更新都可能静静失效**。它的表现很有欺骗性：
+
+- 不报错、不崩溃；
+- 插件**照常注册**（查 `shell.overlay` 的 occupants，`active` 还是 `true`）；
+- 只是 CSS **一条都不命中** —— 气泡、玻璃、水波纹全没了。
+
+> 实测：0.1.7-rc.2 → 0.2.0-rc.1 **一个都没变**（运气）；0.2.0-rc.2 **7 个全变**。
+> 所以「上次没变」不能当规律。
+
+### 恢复办法
+
+按**模块名**去找同一模块的新映射对象。一段正则就能捞：
+
+```js
+const re = /(\w+)_module_css_default\s*=\s*\{([^}]*)\}/g;
+// 对每个命中，解析出 { "逻辑名": "哈希_逻辑名" }，挑含你要的逻辑名的那个
+```
+
+常用的四个模块（改版也没换过名字）：
+
+| 模块 | 逻辑名 | 用途 |
+|---|---|---|
+| `MessageItem_module.css` | `bubble` / `userRow` | 用户消息气泡 / 那一行 |
+| `AssistantMarkdown_module.css` | `root` / `body` | AI 回复块根 / markdown 列 |
+| `AppFrame_module.css` | `frame` / `sidebarCol` | 整个窗口外框 / 侧栏列 |
+| `SidebarRoot_module.css` | `root` | 侧栏根 |
+
+**别用后缀选择器绕过这件事**（比如 `[class*="_root"]`）：
+`_root`、`_body` 这类逻辑名到处都有，会误伤一大片；
+`_bubble`、`_sidebarCol` 这种才勉强能用。老老实实按模块查哈希最稳。
+
+### 修完怎么生效
+
+**改 `client.js` 不用重启** —— 客户端半边是热重载的，存盘即生效。
+所以这类修复是「改 7 个常量 + 刷新页面」的事，不是「重装 + 重启」。
+
+完整的取类名工具见 `_ref/find-css-classes.cjs`（`_ref/` 被 gitignore，属于本机开发工具）。
+

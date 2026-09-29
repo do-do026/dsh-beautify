@@ -30,17 +30,23 @@ window.__ModuleLoader__.load({
     const SOURCE = '@local/dsh-beautify';
     const STORE_KEY = 'dsh-beautify.settings.v1';
 
-    // Shipped chat stylesheet classes (see the note above about upgrade risk).
-    const BUBBLE_CLASS = 'LdtX1G_bubble'; // one user message bubble
-    const USER_ROW_CLASS = 'LdtX1G_userRow'; // the user message row
-    const AI_ROOT_CLASS = 'kshsua_root'; // the assistant step root
-    const AI_BODY_CLASS = 'kshsua_body'; // the assistant markdown column
+    // Shipped chat stylesheet classes. These are CSS-module names: the logical
+    // part ("_bubble", "_frame") is stable across DSH builds, but the hash
+    // prefix is regenerated on every build, so these go stale on an update and
+    // the plugin silently stops styling. Recovered for DSH 0.2.0-rc.2 with
+    // `_ref/find-css-classes.cjs`, which maps module -> new hash.
+    // Module they come from is in the trailing comment; if one breaks, look up
+    // the same module rather than guessing.
+    const BUBBLE_CLASS = 'cJsG2q_bubble'; // MessageItem_module.css — one user message bubble
+    const USER_ROW_CLASS = 'cJsG2q_userRow'; // MessageItem_module.css — the user message row
+    const AI_ROOT_CLASS = 'v5IAXa_root'; // AssistantMarkdown_module.css — the assistant step root
+    const AI_BODY_CLASS = 'v5IAXa_body'; // AssistantMarkdown_module.css — the assistant markdown column
     // The app frame, the sidebar column and the sidebar root. DSH paints the
     // sidebar fill on the column AND again on the root inside it; the frame
     // carries --dsw-alias-bg-base across the whole window, sidebar included.
-    const FRAME_CLASS = 'ZTP-Xa_frame';
-    const SIDEBAR_COL_CLASS = 'ZTP-Xa_sidebarCol';
-    const SIDEBAR_CLASS = 'n_2Q3W_root';
+    const FRAME_CLASS = 'BynINW_frame'; // AppFrame_module.css
+    const SIDEBAR_COL_CLASS = 'BynINW_sidebarCol'; // AppFrame_module.css
+    const SIDEBAR_CLASS = '_2H3hWW_root'; // SidebarRoot_module.css
 
     const IMAGE_MAX_WIDTH = 1920;
     const AVATAR_MAX_WIDTH = 512;
